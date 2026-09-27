@@ -7,7 +7,6 @@ running Git commit ID.
 
 ## CCA 2 requirements covered
 
-- Dynamic server-rendered home page using Flask + Jinja2
 - Form with POST request and input validation
 - JSON API: `GET /api/bills`
 - Health route: `GET /health`
