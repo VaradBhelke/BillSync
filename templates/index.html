@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BillSync | Bill & Subscription Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+<header class="hero">
+    <div>
+        <p class="eyebrow">CCD • CCA 2</p>
+        <h1>BillSync</h1>
+        <p>Track bills and subscriptions before they become overdue.</p>
+    </div>
+</header>
+
+<main class="container">
+    <section class="stats">
+        <article class="stat-card">
+            <span>Total bills</span>
+            <strong>{{ summary.count }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Total due</span>
+            <strong>₹{{ "%.2f"|format(summary.total_due) }}</strong>
+        </article>
+        <article class="stat-card">
+            <span>Overdue</span>
+            <strong>{{ summary.overdue }}</strong>
+        </article>
+    </section>
+
+    <section class="card">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Add data</p>
+                <h2>Add a Bill / Subscription</h2>
+            </div>
+        </div>
+
+        {% if error %}
+        <div class="alert">{{ error }}</div>
+        {% endif %}
+
+        <form action="{{ url_for('add_bill') }}" method="post" class="bill-form">
+            <label>
+                Name
+                <input name="name" value="{{ form_data.get('name', '') }}"
+                       placeholder="Netflix, Electricity, Rent..." required>
+            </label>
+
+            <label>
+                Amount (₹)
+                <input name="amount" type="number" min="0.01" step="0.01"
+                       value="{{ form_data.get('amount', '') }}"
+                       placeholder="499" required>
+            </label>
+
+            <label>
+                Due date
+                <input name="due_date" type="date"
+                       value="{{ form_data.get('due_date', '') }}" required>
+            </label>
+
+            <label>
+                Category
+                <select name="category">
+                    {% for item in ["Subscription", "Utility", "Rent", "Insurance", "Loan/EMI", "Other"] %}
+                    <option {% if form_data.get('category', 'Subscription') == item %}selected{% endif %}>
+                        {{ item }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Payment status
+                <select name="status">
+                    {% for item in ["Pending", "Paid", "Overdue"] %}
+                    <option {% if form_data.get('status', 'Pending') == item %}selected{% endif %}>
+                        {{ item }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </label>
+
+            <label>
+                Notes
+                <input name="notes" value="{{ form_data.get('notes', '') }}"
+                       placeholder="Auto-pay enabled, etc.">
+            </label>
+
+            <button class="primary" type="submit">Add Bill</button>
+        </form>
+    </section>
+
+    <section class="card">
+        <div class="section-heading">
+            <div>
+                <p class="eyebrow">Live server data</p>
+                <h2>Your Bills</h2>
+            </div>
+            <a class="api-link" href="{{ url_for('api_bills') }}">View JSON API</a>
+        </div>
+
+        {% if bills %}
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Amount</th>
+                        <th>Due date</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th>Notes</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                {% for bill in bills %}
+                    <tr>
+                        <td><strong>{{ bill.name }}</strong></td>
+                        <td>₹{{ "%.2f"|format(bill.amount) }}</td>
+                        <td>{{ bill.due_date }}</td>
+                        <td>{{ bill.category }}</td>
+                        <td><span class="badge {{ bill.status|lower }}">{{ bill.status }}</span></td>
+                        <td>{{ bill.notes or "—" }}</td>
+                        <td>
+                            <form action="{{ url_for('delete_bill', bill_id=bill.id) }}" method="post">
+                                <button class="delete" type="submit">Delete</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty">
+            <h3>No bills yet</h3>
+            <p>Add your first bill above. The page will update from server-side data.</p>
+        </div>
+        {% endif %}
+    </section>
+</main>
+
+<footer>
+    BillSync • CCA 2 • Running commit:
+    <strong>{{ commit }}</strong>
+    <span>•</span>
+    <a href="{{ url_for('health') }}">Health check</a>
+</footer>
+</body>
+</html>
