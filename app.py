@@ -214,9 +214,34 @@ def delete_bill(bill_id):
 
 @app.get("/api/bills")
 def api_bills():
+    status = request.args.get("status", "").strip()
+
+    allowed_statuses = {
+        "Pending",
+        "Paid",
+        "Overdue",
+    }
+
+    if status and status not in allowed_statuses:
+        return jsonify(
+            {
+                "error": "Invalid status.",
+                "allowed_statuses": sorted(allowed_statuses),
+            }
+        ), 400
+
+    filtered_bills = bills
+
+    if status:
+        filtered_bills = [
+            bill
+            for bill in bills
+            if bill["status"] == status
+        ]
+
     return jsonify(
         {
-            "bills": bills,
+            "bills": filtered_bills,
             "summary": calculate_summary(),
         }
     )
