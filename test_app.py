@@ -246,4 +246,3 @@ def test_search_bills(client):
     assert response.status_code == 200
     assert b"Netflix" in response.data
     assert b"Electricity" not in response.data
-
