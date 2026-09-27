@@ -223,7 +223,7 @@ def test_search_bills(client):
             "name": "Netflix",
             "amount": "649",
             "due_date": "2026-12-15",
-            "category": "Entertainment",
+            "category": "Subscription",
             "status": "Pending",
         },
         follow_redirects=True,
@@ -235,7 +235,7 @@ def test_search_bills(client):
             "name": "Electricity",
             "amount": "1200",
             "due_date": "2026-12-20",
-            "category": "Utilities",
+            "category": "Utility",
             "status": "Pending",
         },
         follow_redirects=True,
@@ -246,3 +246,37 @@ def test_search_bills(client):
     assert response.status_code == 200
     assert b"Netflix" in response.data
     assert b"Electricity" not in response.data
+
+
+def test_summary_includes_paid_and_pending_amounts(client):
+    app.bills.extend(
+        [
+            {
+                "id": 1,
+                "name": "Netflix",
+                "amount": 649.0,
+                "due_date": "2026-12-15",
+                "category": "Subscription",
+                "status": "Pending",
+                "notes": "",
+            },
+            {
+                "id": 2,
+                "name": "Electricity",
+                "amount": 1200.0,
+                "due_date": "2026-12-20",
+                "category": "Utility",
+                "status": "Paid",
+                "notes": "",
+            },
+        ]
+    )
+
+    response = client.get("/api/bills")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert data["summary"]["paid_amount"] == 1200.0
+    assert data["summary"]["pending_amount"] == 649.0

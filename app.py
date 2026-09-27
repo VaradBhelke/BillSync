@@ -20,10 +20,22 @@ def get_commit():
 
 
 def calculate_summary():
-    total = sum(
+    total_due = sum(
         float(bill["amount"])
         for bill in bills
         if bill["status"] != "Paid"
+    )
+
+    paid_amount = sum(
+        float(bill["amount"])
+        for bill in bills
+        if bill["status"] == "Paid"
+    )
+
+    pending_amount = sum(
+        float(bill["amount"])
+        for bill in bills
+        if bill["status"] == "Pending"
     )
 
     overdue = sum(
@@ -34,7 +46,9 @@ def calculate_summary():
 
     return {
         "count": len(bills),
-        "total_due": round(total, 2),
+        "total_due": round(total_due, 2),
+        "paid_amount": round(paid_amount, 2),
+        "pending_amount": round(pending_amount, 2),
         "overdue": overdue,
     }
 
