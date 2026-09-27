@@ -15,8 +15,14 @@ def get_commit():
 
 
 def calculate_summary():
-    total = sum(float(bill["amount"]) for bill in bills if bill["status"] != "Paid")
-    overdue = sum(1 for bill in bills if bill["status"] == "Overdue")
+    total = sum(
+        float(bill["amount"])
+        for bill in bills
+        if bill["status"] != "Paid"
+    )
+    overdue = sum(
+        1 for bill in bills if bill["status"] == "Overdue"
+    )
     return {
         "count": len(bills),
         "total_due": round(total, 2),
@@ -45,7 +51,6 @@ def validate_bill(form):
     if not name:
         errors.append("Bill name is required.")
 
-    # Validate due date and reject past dates.
     try:
         parsed_date = datetime.strptime(due_date, "%Y-%m-%d")
         if parsed_date.date() < datetime.today().date():
@@ -123,7 +128,10 @@ def add_bill():
 def delete_bill(bill_id):
     global bills
 
-    bills = [bill for bill in bills if bill["id"] != bill_id]
+    bills = [
+        bill for bill in bills
+        if bill["id"] != bill_id
+    ]
 
     return redirect(url_for("home"))
 
@@ -149,4 +157,3 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=int(os.getenv("PORT", "5000")),
     )
-    
