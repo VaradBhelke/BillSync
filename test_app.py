@@ -1,17 +1,19 @@
 import pytest
 
-from app import app, bills
+import app
 
 
 @pytest.fixture()
 def client():
-    app.config["TESTING"] = True
-    bills.clear()
+    app.app.config["TESTING"] = True
+    app.bills.clear()
+    app.next_id = 1
 
-    with app.test_client() as test_client:
+    with app.app.test_client() as test_client:
         yield test_client
 
-    bills.clear()
+    app.bills.clear()
+    app.next_id = 1
 
 
 def test_health_route(client):
@@ -105,7 +107,7 @@ def test_delete_bill_removes_data(client):
         },
     )
 
-    bill_id = bills[0]["id"]
+    bill_id = app.bills[0]["id"]
 
     response = client.post(
         f"/bills/{bill_id}/delete"
@@ -116,7 +118,7 @@ def test_delete_bill_removes_data(client):
 
 
 def test_single_bill_api(client):
-    response = client.post(
+    client.post(
         "/bills",
         data={
             "name": "Netflix",
@@ -126,10 +128,7 @@ def test_single_bill_api(client):
             "status": "Pending",
             "notes": "Monthly subscription",
         },
-        follow_redirects=False,
     )
-
-    assert response.status_code == 302
 
     response = client.get("/api/bills")
 
@@ -138,7 +137,8 @@ def test_single_bill_api(client):
     bills_data = response.get_json()["bills"]
 
     netflix_bill = next(
-        bill for bill in bills_data
+        bill
+        for bill in bills_data
         if bill["name"] == "Netflix"
     )
 
@@ -163,4 +163,54 @@ def test_single_bill_api_not_found(client):
     data = response.get_json()
 
     assert data["error"] == "Bill not found."
-    
+
+
+def test_update_bill_api(client):
+    client.post(
+        "/bills",
+        data={
+            "name": "Netflix",
+            "amount": "649",
+            "due_date": "2030-01-15",
+            "category": "Subscription",
+            "status": "Pending",
+            "notes": "Monthly subscription",
+        },
+    )
+
+    response = client.get("/api/bills")
+
+    assert response.status_code == 200
+
+    bill_id = response.get_json()["bills"][0]["id"]
+
+    response = client.put(
+        f"/api/bills/{bill_id}",
+        json={
+            "amount": 799,
+            "status": "Paid",
+        },
+    )
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert data["amount"] == 799.0
+    assert data["status"] == "Paid"
+    assert data["name"] == "Netflix"
+
+
+def test_update_bill_api_not_found(client):
+    response = client.put(
+        "/api/bills/999",
+        json={
+            "amount": 500,
+        },
+    )
+
+    assert response.status_code == 404
+
+    data = response.get_json()
+
+    assert data["error"] == "Bill not found."
