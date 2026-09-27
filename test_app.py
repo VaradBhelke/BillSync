@@ -280,3 +280,37 @@ def test_summary_includes_paid_and_pending_amounts(client):
 
     assert data["summary"]["paid_amount"] == 1200.0
     assert data["summary"]["pending_amount"] == 649.0
+
+
+def test_api_status_filter(client):
+    client.post(
+        "/bills",
+        data={
+            "name": "Netflix",
+            "amount": "649",
+            "due_date": "2030-01-15",
+            "category": "Subscription",
+            "status": "Pending",
+        },
+    )
+
+    client.post(
+        "/bills",
+        data={
+            "name": "Electricity",
+            "amount": "1200",
+            "due_date": "2030-01-20",
+            "category": "Utility",
+            "status": "Paid",
+        },
+    )
+
+    response = client.get("/api/bills?status=Pending")
+
+    assert response.status_code == 200
+
+    data = response.get_json()
+
+    assert len(data["bills"]) == 1
+    assert data["bills"][0]["name"] == "Netflix"
+    assert data["bills"][0]["status"] == "Pending"
