@@ -111,10 +111,30 @@ def validate_bill(form):
     }
 
 
+def search_bills(search_term):
+    """Return bills matching name, category, or status."""
+    search_term = search_term.strip().lower()
+
+    if not search_term:
+        return bills
+
+    return [
+        bill
+        for bill in bills
+        if search_term in bill["name"].lower()
+        or search_term in bill["category"].lower()
+        or search_term in bill["status"].lower()
+    ]
+
+
 @app.get("/")
 def home():
+    search = request.args.get("search", "").strip()
+
+    filtered_bills = search_bills(search)
+
     ordered = sorted(
-        bills,
+        filtered_bills,
         key=lambda bill: bill["due_date"],
     )
 
@@ -125,6 +145,7 @@ def home():
         commit=get_commit(),
         error=None,
         form_data={},
+        search=search,
     )
 
 
@@ -149,6 +170,7 @@ def add_bill():
             commit=get_commit(),
             error=" ".join(errors),
             form_data=request.form,
+            search="",
         ), 400
 
     data["id"] = next_id

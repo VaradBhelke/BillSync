@@ -214,3 +214,36 @@ def test_update_bill_api_not_found(client):
     data = response.get_json()
 
     assert data["error"] == "Bill not found."
+
+
+def test_search_bills(client):
+    client.post(
+        "/bills",
+        data={
+            "name": "Netflix",
+            "amount": "649",
+            "due_date": "2026-12-15",
+            "category": "Entertainment",
+            "status": "Pending",
+        },
+        follow_redirects=True,
+    )
+
+    client.post(
+        "/bills",
+        data={
+            "name": "Electricity",
+            "amount": "1200",
+            "due_date": "2026-12-20",
+            "category": "Utilities",
+            "status": "Pending",
+        },
+        follow_redirects=True,
+    )
+
+    response = client.get("/?search=Netflix")
+
+    assert response.status_code == 200
+    assert b"Netflix" in response.data
+    assert b"Electricity" not in response.data
+
