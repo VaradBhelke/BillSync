@@ -15,9 +15,19 @@ def get_commit():
 
 
 def calculate_summary():
-    total = sum(float(bill["amount"]) for bill in bills if bill["status"] != "Paid")
-    overdue = sum(1 for bill in bills if bill["status"] == "Overdue")
-    return {"count": len(bills), "total_due": round(total, 2), "overdue": overdue}
+    total = sum(
+        float(bill["amount"])
+        for bill in bills
+        if bill["status"] != "Paid"
+    )
+    overdue = sum(
+        1 for bill in bills if bill["status"] == "Overdue"
+    )
+    return {
+        "count": len(bills),
+        "total_due": round(total, 2),
+        "overdue": overdue,
+    }
 
 
 def validate_bill(form):
@@ -29,6 +39,7 @@ def validate_bill(form):
     notes = form.get("notes", "").strip()
 
     errors = []
+
     try:
         amount = float(amount_raw)
         if amount <= 0:
@@ -41,15 +52,26 @@ def validate_bill(form):
         errors.append("Bill name is required.")
 
     try:
-        datetime.strptime(due_date, "%Y-%m-%d")
+        parsed_date = datetime.strptime(due_date, "%Y-%m-%d")
+        if parsed_date.date() < datetime.today().date():
+            errors.append("Due date cannot be in the past.")
     except ValueError:
         errors.append("A valid due date is required.")
 
-    allowed_categories = {"Subscription", "Utility", "Rent", "Insurance", "Loan/EMI", "Other"}
+    allowed_categories = {
+        "Subscription",
+        "Utility",
+        "Rent",
+        "Insurance",
+        "Loan/EMI",
+        "Other",
+    }
+
     allowed_statuses = {"Pending", "Paid", "Overdue"}
 
     if category not in allowed_categories:
         errors.append("Invalid category.")
+
     if status not in allowed_statuses:
         errors.append("Invalid payment status.")
 
@@ -66,6 +88,7 @@ def validate_bill(form):
 @app.get("/")
 def home():
     ordered = sorted(bills, key=lambda bill: bill["due_date"])
+
     return render_template(
         "index.html",
         bills=ordered,
@@ -81,8 +104,10 @@ def add_bill():
     global next_id
 
     errors, data = validate_bill(request.form)
+
     if errors:
         ordered = sorted(bills, key=lambda bill: bill["due_date"])
+
         return render_template(
             "index.html",
             bills=ordered,
@@ -95,25 +120,40 @@ def add_bill():
     data["id"] = next_id
     next_id += 1
     bills.append(data)
+
     return redirect(url_for("home"))
 
 
 @app.post("/bills/<int:bill_id>/delete")
 def delete_bill(bill_id):
     global bills
-    bills = [bill for bill in bills if bill["id"] != bill_id]
+
+    bills = [
+        bill for bill in bills
+        if bill["id"] != bill_id
+    ]
+
     return redirect(url_for("home"))
 
 
 @app.get("/api/bills")
 def api_bills():
-    return jsonify({"bills": bills, "summary": calculate_summary()})
+    return jsonify({
+        "bills": bills,
+        "summary": calculate_summary(),
+    })
 
 
 @app.get("/health")
 def health():
-    return jsonify({"status": "ok", "commit": get_commit()})
+    return jsonify({
+        "status": "ok",
+        "commit": get_commit(),
+    })
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")))
+    app.run(
+        host="0.0.0.0",
+        port=int(os.getenv("PORT", "5000")),
+    )
