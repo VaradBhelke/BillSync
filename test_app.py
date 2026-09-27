@@ -281,6 +281,7 @@ def test_summary_includes_paid_and_pending_amounts(client):
     assert data["summary"]["paid_amount"] == 1200.0
     assert data["summary"]["pending_amount"] == 649.0
 
+
 def test_api_status_filter(client):
     client.post(
         "/bills",
