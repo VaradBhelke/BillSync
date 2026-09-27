@@ -87,7 +87,10 @@ def validate_bill(form):
 
 @app.get("/")
 def home():
-    ordered = sorted(bills, key=lambda bill: bill["due_date"])
+    ordered = sorted(
+        bills,
+        key=lambda bill: bill["due_date"],
+    )
 
     return render_template(
         "index.html",
@@ -106,7 +109,10 @@ def add_bill():
     errors, data = validate_bill(request.form)
 
     if errors:
-        ordered = sorted(bills, key=lambda bill: bill["due_date"])
+        ordered = sorted(
+            bills,
+            key=lambda bill: bill["due_date"],
+        )
 
         return render_template(
             "index.html",
@@ -129,7 +135,8 @@ def delete_bill(bill_id):
     global bills
 
     bills = [
-        bill for bill in bills
+        bill
+        for bill in bills
         if bill["id"] != bill_id
     ]
 
@@ -142,6 +149,19 @@ def api_bills():
         "bills": bills,
         "summary": calculate_summary(),
     })
+
+
+@app.get("/api/bills/<int:bill_id>")
+def api_bill(bill_id):
+    bill = next(
+        (bill for bill in bills if bill["id"] == bill_id),
+        None,
+    )
+
+    if bill is None:
+        return jsonify({"error": "Bill not found."}), 404
+
+    return jsonify(bill)
 
 
 @app.get("/health")
